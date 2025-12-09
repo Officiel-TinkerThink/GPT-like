@@ -33,3 +33,17 @@ GPT_CONFIG_XL:
   n_layers: 48
   drop_rate: [0.1, 0.1, 0.1]
   qkv_bias: False
+
+hyperparams:
+  train_ratio: 0.9
+  num_epochs: 10
+  eval_freq: 5
+  eval_iter: 5
+  start_context: "Every effort moves you"
+
+data:
+  train_ratio: 0.9
+  textfile_path: "./the-verdict.txt"
+  tokenizer: 'gpt2'
+
+
