@@ -36,7 +36,7 @@ GPT_CONFIG_XL:
 
 hyperparams:
   train_ratio: 0.9
-  num_epochs: 10
+  num_epochs: 1
   eval_freq: 5
   eval_iter: 5
   start_context: "Every effort moves you"
@@ -45,5 +45,6 @@ data:
   train_ratio: 0.9
   textfile_path: "./the-verdict.txt"
   tokenizer: 'gpt2'
+  plot_dir: './plot'
 
 

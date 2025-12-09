@@ -9,6 +9,7 @@ from matplotlib.ticker import MaxNLocator
 import argparse
 import torch
 import sys
+import os
 
 def arg_parse(argv):
     parser = argparse.ArgumentParser()
@@ -77,9 +78,9 @@ def train(args):
     )
 
     epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
-    plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
+    plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses, data_config["plot_dir"])
 
-def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
+def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses, plot_dir):
     fig, ax1 = plt.subplots(figsize=(5,3))
     ax1.plot(epochs_seen, train_losses, label="Training loss")
     ax1.plot(
@@ -93,9 +94,10 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     ax2.plot(tokens_seen, train_losses, alpha=0)
     ax2.set_xlabel("Tokens seen")
     fig.tight_layout()
+    if not os.path.exists(plot_dir):
+        os.mkdir(plot_dir)
     # save plot
-    fig.savefig("./plot/losses.png")
-    plt.show()
+    fig.savefig(f"{plot_dir}/losses.png")
 
 
 def train_model_simple(model, train_loader, val_loader,
