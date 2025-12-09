@@ -1,4 +1,4 @@
-from utils.utils import token_ids_to_text, text_to_token_ids, generate_text_simple
+from utils.tokenize import token_ids_to_text, text_to_token_ids, generate_text_simple
 from utils.loss import calc_loss_batch, calc_loss_loader
 from utils.text_processing import read_config, read_file
 from dataset.dataset import create_dataloader_v1
