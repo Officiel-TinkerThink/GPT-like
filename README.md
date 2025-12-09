@@ -1,0 +1,1 @@
+This repo contains a simple implementation of a GPT-like model. (GPT-2 Small with 120M parameters).
