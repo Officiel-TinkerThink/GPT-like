@@ -1,4 +1,8 @@
-__pycache__
+__pycache__/
+*.pyc
 notebooks/
-
 plot/
+checkpoints/
+node_modules/
+assets/raw-video/
+.DS_Store

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPT from Scratch</title>
+  <meta name="description" content="A GPT built from scratch, trained on one short story, generating text in your browser one token at a time — with the next-token distribution, the attention heads and the training curve all visible." />
+  <meta property="og:title" content="GPT from Scratch — a tiny transformer you can watch think" />
+  <meta property="og:description" content="Token-by-token generation with the probability distribution, steerable sampling, attention heads, and checkpoints from epoch 1 to 300." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2310b981'/><text x='50' y='68' font-size='52' text-anchor='middle' font-family='Arial' font-weight='700' fill='%23032a1f'>G</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">G</span>
+      <div>
+        <h1>GPT from Scratch</h1>
+        <p>A 2.2M-parameter transformer trained on one short story, running in your browser</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="generate" role="tab">Generate</button>
+      <button class="tab" data-tab="attention" role="tab">Attention</button>
+      <button class="tab" data-tab="training" role="tab">Training</button>
+      <button class="tab" data-tab="tokenizer" role="tab">Tokenizer</button>
+      <button class="tab" data-tab="about" role="tab">About</button>
+    </nav>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost" href="https://github.com/Officiel-TinkerThink/GPT-like" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- ============================================================ GENERATE -->
+    <section class="tab-body active" data-tab="generate">
+      <div class="grid2">
+        <div class="card">
+          <div class="row-head">
+            <h2>Generate</h2>
+            <label class="inline" title="Epoch 30 is fluent but still unsure; epoch 300 has memorised the story; epoch 1 is word soup">Checkpoint <select id="ckpt"></select></label>
+          </div>
+          <div class="input-row">
+            <input type="text" id="prompt" value="I had always thought Jack Gisburn" spellcheck="false" />
+            <button class="btn btn-primary" id="btnGen">▶ Generate</button>
+            <button class="btn" id="btnStop" disabled>■</button>
+            <button class="btn" id="btnStep" title="Generate one token">+1</button>
+          </div>
+          <div class="toolbar">
+            <label>Temperature <input type="range" id="temp" min="0" max="1.5" step="0.05" value="0.8" /><output id="tempOut">0.80</output></label>
+            <label>Top-k <input type="range" id="topk" min="1" max="50" step="1" value="20" /><output id="topkOut">20</output></label>
+            <label>Tokens <select id="maxTok"><option>20</option><option selected>40</option><option>80</option><option>150</option></select></label>
+            <label class="check"><input type="checkbox" id="chkManual" /> I pick each token</label>
+          </div>
+          <div class="output" id="output"></div>
+          <div class="outfoot"><span class="hint" id="memo"></span><span class="hint" id="genStats"></span></div>
+          <p class="hint">Words are shaded by the probability they were sampled with. Epoch 30 is the default — fluent but still unsure; switch to epoch 300 to see the story recited from memory, or epoch 1 for word soup.</p>
+        </div>
+        <aside class="card">
+          <h2>Next token</h2>
+          <p class="hint">The model's probability distribution for the next word (after top-k and temperature). In manual mode, click one.</p>
+          <div class="cands" id="cands"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ ATTENTION -->
+    <section class="tab-body" data-tab="attention">
+      <div class="grid2">
+        <div class="card">
+          <div class="row-head">
+            <h2>Causal attention</h2>
+            <div class="inline"><label>Layer <select id="layer"></select></label><label>Head <select id="head"></select></label></div>
+          </div>
+          <p class="hint">Each row is a token attending to the tokens before it (the upper triangle is masked — a GPT can't look ahead). Brighter = more attention (square-root scale so weak links stay visible). Hover a cell. Generate something first.</p>
+          <div class="diagram-wrap"><canvas id="diagram" width="600" height="600"></canvas><div class="cell-tip" id="cellTip" hidden></div></div>
+        </div>
+        <aside class="card">
+          <h2>All heads</h2>
+          <div class="thumbs" id="thumbs"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ TRAINING -->
+    <section class="tab-body" data-tab="training">
+      <div class="card">
+        <h2>How it learned</h2>
+        <p class="lead" id="trainLead"></p>
+        <div class="stat-tiles" id="trainStats"></div>
+        <div class="chart-wrap">
+          <div class="chart-head"><h3>Cross-entropy loss per epoch</h3><div class="legend" id="legend"></div></div>
+          <svg id="chart" class="chart" role="img" aria-label="Training and validation loss"></svg>
+          <div class="chart-tooltip" id="tip" hidden></div>
+        </div>
+        <h3>The same prompt at each checkpoint</h3>
+        <p class="hint">"I had always thought Jack Gisburn" → 40 tokens, temperature 0.8, top-k 20, fixed seed.</p>
+        <div class="samples" id="samples"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ TOKENIZER -->
+    <section class="tab-body" data-tab="tokenizer">
+      <div class="card">
+        <h2>Tokenizer</h2>
+        <p class="lead">The repo's <code>SimpleTokenizerV2</code>: split on punctuation and whitespace, look each piece up in a vocabulary built from the story, and map anything unseen to <code>&lt;|unk|&gt;</code>. Real GPT-2 uses byte-pair encoding with 50,257 tokens; this vocabulary has <span id="vocabSize">…</span>.</p>
+        <textarea id="tokText" rows="4" spellcheck="false">Hello, do you like tea? In the sunlit terraces of the palace.</textarea>
+        <div class="tokens" id="tokens"></div>
+        <p class="hint" id="tokNote"></p>
+      </div>
+    </section>
+
+    <!-- ============================================================ ABOUT -->
+    <section class="tab-body" data-tab="about">
+      <div class="grid2 about">
+        <article class="card prose">
+          <h2>The model</h2>
+          <p>The repository implements GPT-2 from scratch in PyTorch: token + position embeddings, a stack of pre-LayerNorm transformer blocks (causal multi-head attention, GELU feed-forward, residual connections) and an output head. The config file describes GPT-2 Small through XL (124 M – 1.5 B parameters).</p>
+          <p>For the browser, the same code was trained as a <b>tiny GPT</b>: context 64, embedding 192, 4 heads, 4 layers — <b>2.23 M parameters</b> — on the 4,666 tokens of Edith Wharton's <em>The Verdict</em>, with the repo's word-level tokenizer. It is tiny enough to run at dozens of tokens per second in plain JavaScript, and the story is small enough that you can watch the model go from noise (epoch 1) to grammar (epoch 30) to memorisation (epoch 300).</p>
+          <h3>What to notice</h3>
+          <ul>
+            <li>At high temperature the model stays on-topic but drifts; at temperature 0 it recites the story verbatim — the memorisation meter under the output shows how much of the text is copied.</li>
+            <li>Attention heads in a GPT are lower-triangular: a token can only attend to the past.</li>
+            <li>Validation loss stops improving long before training loss does — a 4,000-token dataset can't teach a language model much beyond itself.</li>
+          </ul>
+        </article>
+        <article class="card prose">
+          <h2>Under the hood</h2>
+          <ul>
+            <li><code>tools/train_tiny.py</code> trains with AdamW for 300 epochs and saves milestone checkpoints; <code>tools/export_web.py</code> quantises each to int8 (≈2.3 MB).</li>
+            <li><code>docs/js/gpt.js</code> is the inference engine: the tokenizer, the forward pass with a KV cache, sampling identical to <code>tools/infer.py</code> (top-k, then temperature), and every head's attention weights.</li>
+            <li>Tests compare the JavaScript logits with PyTorch's for the reference prompt.</li>
+          </ul>
+          <h3>Fixes made along the way</h3>
+          <ul>
+            <li><code>TransformerBlock</code> passed <code>emb_dim</code> as the attention mask's context length — it only worked when embeddings were at least as wide as the context.</li>
+            <li>The tokenizer's <code>int_to_str</code> was built from the wrong side of the vocabulary dict, so <code>decode</code> raised <code>KeyError</code>.</li>
+            <li>The hand-written GELU used <code>0.44715</code> instead of <code>0.044715</code>.</li>
+            <li><code>tools/infer.py</code> was empty; it now generates with temperature and top-k.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Built by <a href="https://github.com/Officiel-TinkerThink" target="_blank" rel="noopener">Wahyu Bornok Augus Sinurat</a> · GPT from scratch · everything runs in your browser.</footer>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="js/gpt.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

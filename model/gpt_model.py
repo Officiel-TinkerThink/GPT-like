@@ -51,7 +51,7 @@ class TransformerBlock(nn.Module):
         self.att = MultiHeadAttention(
             d_in=cfg["emb_dim"],
             d_out=cfg["emb_dim"],
-            context_length=cfg["emb_dim"],
+            context_length=cfg["context_length"],
             num_heads=cfg["n_heads"],
             dropout=cfg["drop_rate"][1], # second value of dropout
             qkv_bias=cfg["qkv_bias"],

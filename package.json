@@ -1,0 +1,11 @@
+{
+  "name": "gpt-like",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A GPT-style transformer built from scratch in PyTorch, plus a browser demo that runs a tiny trained model in plain JavaScript.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080 --directory docs"
+  },
+  "license": "MIT"
+}

@@ -4,7 +4,7 @@ from utils.text_processing import read_and_build
 class SimpleTokenizerV1:
     def __init__(self, vocab: dict[str, int]):
         self.str_to_int = vocab
-        self.int_to_str = { i:s for i, s in vocab.items()}
+        self.int_to_str = {i: s for s, i in vocab.items()}
 
     def encode(self, text):
         preprocessed = re.split(r'([,.:;?_"()\']|--|\s)', text)
@@ -22,7 +22,7 @@ class SimpleTokenizerV1:
 class SimpleTokenizerV2:
     def __init__(self, vocab: dict[str, int]):
         self.str_to_int = vocab
-        self.int_to_str = { i:s for i, s in vocab.items()}
+        self.int_to_str = {i: s for s, i in vocab.items()}
 
     def encode(self, text):
         preprocessed = re.split(r'([,.:;?_"()\']|--|\s)', text)
